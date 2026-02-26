@@ -9,8 +9,8 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "ch.qos.logback:logback-classic:$logbackVersion"
 
-  relocate "org.ow2.asm:asm:$asmVersion"
-  relocate "org.ow2.asm:asm-commons:$asmVersion"
+  compileOnly "org.ow2.asm:asm:$asmVersion"
+  compileOnly "org.ow2.asm:asm-commons:$asmVersion"
   relocate "com.joom.grip:grip:$gripVersion"
 
   testImplementation "junit:junit:$junitVersion"
@@ -24,6 +24,5 @@ pablo {
   shadow {
     relocate 'io.junglicode.paranoid'
     relocate 'com.joom.grip', 'io.junglicode.paranoid.grip'
-    relocate 'org.objectweb.asm', 'io.junglicode.paranoid.asm'
   }
 }
