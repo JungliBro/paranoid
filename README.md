@@ -3,7 +3,9 @@
 [![Build](https://github.com/JungliBro/paranoid/actions/workflows/build.yml/badge.svg)](https://github.com/JungliBro/paranoid/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-> **Actively maintained fork** of [michaelrocks/paranoid](https://github.com/michaelrocks/paranoid) — original project was abandoned in 2019. This fork brings full **AGP 8+ support** and upgrades the string encryption from a simple XOR cipher to **AES-256-CTR** with a scattered key that is unique to every build.
+**Paranoid** protects your Android app's sensitive strings — API keys, URLs, secrets — by replacing them at compile time with **AES-256-CTR encrypted data**. A fresh 256-bit key is generated on every build and split across 8 scattered inner classes so no key ever appears as a readable constant in your APK.
+
+Zero code changes needed — just annotate with `@Obfuscate` and build.
 
 ---
 
@@ -11,7 +13,7 @@
 
 | | Original (abandoned) | This Fork |
 |---|---|---|
-| Android Gradle Plugin | 7.0.3 ❌ | **8.3.2 ✅** |
+| Android Gradle Plugin | 7.0.3  | **8.3.2 ** |
 | Gradle | 7.3.1 | **8.7** |
 | Kotlin | 1.5.32 | **1.9.25** |
 | Java | 8 | **17** |
@@ -20,29 +22,6 @@
 | Key storage | Seed visible in DEX | **Key split into 8 scattered inner classes** |
 | Key per build | Same (predictable) | **Fresh `SecureRandom` key every build** |
 | Gradle Transform | Deprecated `Transform` API | **`AsmClassVisitorFactory` (AGP 8+ API)** |
-
----
-
-## How the AES Encryption Works
-
-Every time you build your app, a **new random 256-bit AES key** is generated using `SecureRandom`. This key is **never stored as a single constant** — it is split into 8 fragments and scattered across generated inner classes (`Deobfuscator$K0` … `Deobfuscator$K7`) as unrecognizable `int[]` arrays:
-
-```
-classes.dex
-├── YourActivity.class
-│     LDC "secret"  →  invokestatic Deobfuscator.getString(42L)   ← no string!
-│
-├── io/michaelrocks/paranoid/Deobfuscator$App.class
-│     static byte[][] data = { ... AES encrypted bytes ... }
-│
-├── io/michaelrocks/paranoid/Deobfuscator$App$K0.class
-│     static int[] V = { 0x3F2B8A1C }   ← key fragment 1 of 8
-├── io/michaelrocks/paranoid/Deobfuscator$App$K1.class
-│     static int[] V = { 0xC4D9112A }   ← key fragment 2 of 8
-│   ... (K2 through K7)
-```
-
-At runtime, the 8 fragments are assembled in RAM, AES-CTR decryption runs, and the plain string is returned. **The full key never exists in the DEX file** — even if an attacker extracts all 8 fragments, they still need to know the correct assembly order (which is only in the Deobfuscator class).
 
 ---
 
@@ -80,13 +59,13 @@ buildscript {
 **App-level `build.gradle`**:
 ```groovy
 apply plugin: 'com.android.application'
-apply plugin: 'io.michaelrocks.paranoid'   // must be AFTER android plugin
+apply plugin: 'io.junglicode.paranoid'   // must be AFTER android plugin
 ```
 
 ### Step 3 — Annotate classes you want to protect
 
 ```kotlin
-import io.michaelrocks.paranoid.Obfuscate
+import io.junglicode.paranoid.Obfuscate
 
 @Obfuscate
 class NetworkConfig {
@@ -142,35 +121,13 @@ paranoid {
 // build.gradle.kts
 plugins {
     id("com.android.application")
-    id("io.michaelrocks.paranoid")
+    id("io.junglicode.paranoid")
 }
 
 paranoid {
     isEnabled = true
     includeSubprojects = false
     isCacheable = false
-}
-```
-
----
-
-## Before / After Compilation
-
-**Before (your source code):**
-```kotlin
-@Obfuscate
-class Config {
-    val apiKey = "sk-live-super-secret"
-}
-```
-
-**After (compiled DEX — what attacker sees):**
-```java
-// No string constants visible anywhere in the class
-public class Config {
-    public String getApiKey() {
-        return Deobfuscator$App.getString(281474976710657L); // ← just an ID
-    }
 }
 ```
 

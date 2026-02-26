@@ -4,5 +4,5 @@ sourceCompatibility = javaVersion
 targetCompatibility = javaVersion
 
 dependencies {
-  implementation "io.michaelrocks:paranoid-core:$version"
+  implementation "io.junglicode:paranoid-core:$version"
 }

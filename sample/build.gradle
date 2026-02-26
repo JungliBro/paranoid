@@ -1,19 +1,19 @@
 buildscript {
   dependencies {
-    classpath "io.michaelrocks:paranoid-gradle-plugin:$version"
+    classpath "io.junglicode:paranoid-gradle-plugin:$version"
   }
 }
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'io.michaelrocks.paranoid'
+apply plugin: 'io.junglicode.paranoid'
 
 android {
   compileSdk androidCompileSdkVersion
-  namespace 'io.michaelrocks.paranoid.sample'
+  namespace 'io.junglicode.paranoid.sample'
 
   defaultConfig {
-    applicationId "io.michaelrocks.paranoid.sample"
+    applicationId "io.junglicode.paranoid.sample"
     minSdk androidMinSdkVersion
     targetSdk androidTargetSdkVersion
     versionCode 1

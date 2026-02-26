@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
   compileSdk androidCompileSdkVersion
-  namespace 'io.michaelrocks.paranoid.processor.subprojectandroid'
+  namespace 'io.junglicode.paranoid.processor.subprojectandroid'
 
   defaultConfig {
     minSdk androidMinSdkVersion
@@ -18,5 +18,5 @@ android {
 }
 
 dependencies {
-  implementation "io.michaelrocks:paranoid-core:$version"
+  implementation "io.junglicode:paranoid-core:$version"
 }

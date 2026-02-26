@@ -1,5 +1,5 @@
 allprojects {
-  group = 'io.michaelrocks'
+  group = 'io.junglicode'
   version = '0.3.7'
 
   ext.javaVersion = JavaVersion.VERSION_17
