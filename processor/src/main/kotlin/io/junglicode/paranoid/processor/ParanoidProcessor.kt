@@ -133,11 +133,11 @@ class ParanoidProcessor(
   private fun createDeobfuscator(): Deobfuscator {
     val deobfuscatorInternalName = "io/junglicode/paranoid/Deobfuscator${composeDeobfuscatorNameSuffix()}"
     val deobfuscatorType = getObjectTypeByInternalName(deobfuscatorInternalName)
-    // Updated signature: (J [[B [[I) Ljava/lang/String;
+    // The generated proxy method takes only the ID; it fetches data/keyParts from static fields
     val deobfuscationMethod = Method(
       "getString",
       Type.getType(String::class.java),
-      arrayOf(Type.LONG_TYPE, Type.getType("[[B"), Type.getType("[[I"))
+      arrayOf(Type.LONG_TYPE)
     )
     return Deobfuscator(deobfuscatorType, deobfuscationMethod)
   }

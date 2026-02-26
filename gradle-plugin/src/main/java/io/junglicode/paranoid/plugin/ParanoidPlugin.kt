@@ -43,36 +43,37 @@ class ParanoidPlugin : Plugin<Project> {
     // Register paranoid-core runtime dependency
     project.addCoreDependency(getDefaultConfiguration())
 
-    // Generate one AES-256 key per project per build
-    // Using SecureRandom — 32 bytes = 256-bit key
-    // The key changes every build unless isCacheable=true + obfuscationSeed is set
+    // Project-wide AES key for deterministic/cacheable builds
     val aesKey = generateAesKey()
 
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
     androidComponents.onVariants { variant ->
-      val scope = if (extension.includeSubprojects) {
-        InstrumentationScope.ALL
-      } else {
-        InstrumentationScope.PROJECT
-      }
+      if (!extension.isEnabled) return@onVariants
 
       val projectName = project.path
         .filter { it.isLetterOrDigit() || it == '_' || it == '$' }
         .let { name -> if (name.isEmpty() || name.startsWith('$')) name else "\$$name" }
 
-      variant.instrumentation.transformClassesWith(
-        ParanoidClassesTransform::class.java,
-        scope
-      ) { params ->
-        // Pass AES key as List<Int> (Gradle parameters must be serializable)
-        params.aesKeyBytes.set(aesKey.map { it.toInt() and 0xFF })
-        params.projectName.set(projectName)
-        params.enabled.set(extension.isEnabled)
+      val taskProvider = project.tasks.register(
+        "paranoid${variant.name.replaceFirstChar { it.uppercase() }}",
+        ParanoidTask::class.java
+      ) { task ->
+        task.projectName.set(projectName)
+        task.aesKeyBytes.set(aesKey.map { it.toInt() and 0xFF })
+        task.obfuscationSeed.set(extension.obfuscationSeed ?: 0)
+        // Extract boot classpath from the project/extension
+        val android = project.extensions.getByName("android") as BaseExtension
+        task.bootClasspath.set(android.bootClasspath)
       }
 
-      variant.instrumentation.setAsmFramesComputationMode(
-        FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS
-      )
+      variant.artifacts.forScope(com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT)
+        .use(taskProvider)
+        .toTransform(
+          com.android.build.api.artifact.ScopedArtifact.CLASSES,
+          ParanoidTask::allJars,
+          ParanoidTask::allDirectories,
+          ParanoidTask::output
+        )
     }
   }
 

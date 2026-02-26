@@ -18,7 +18,7 @@
 package io.junglicode.paranoid.processor
 
 import com.joom.grip.mirrors.toAsmType
-import io.junglicode.paranoid.processor.logging.getLogger
+
 import io.junglicode.paranoid.processor.model.Deobfuscator
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
@@ -31,7 +31,7 @@ class StringLiteralsClassPatcher(
   delegate: ClassVisitor,
 ) : ClassVisitor(asmApi, delegate) {
 
-  private val logger = getLogger()
+
 
   private var className: String = ""
 
@@ -65,8 +65,7 @@ class StringLiteralsClassPatcher(
       }
 
       private fun replaceStringWithDeobfuscationMethod(string: String) {
-        logger.info("{}.{}{}:", className, name, desc)
-        logger.info("  Obfuscating string literal: \"{}\"", string)
+
         val stringId = stringRegistry.registerString(string)
         push(stringId)
         invokeStatic(deobfuscator.type.toAsmType(), deobfuscator.deobfuscationMethod)
