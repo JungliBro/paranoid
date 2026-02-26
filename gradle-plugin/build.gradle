@@ -16,8 +16,7 @@ dependencies {
 
   relocate project(':processor')
 
-  // Needed at compile-time for ParanoidClassesTransform (shaded in processor fat-jar at runtime)
-  compileOnly "com.joom.grip:grip:$gripVersion"
+  implementation "com.joom.grip:grip:$gripVersion"
   compileOnly "org.ow2.asm:asm-commons:$asmVersion"
   compileOnly "org.ow2.asm:asm:$asmVersion"
 
