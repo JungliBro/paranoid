@@ -16,18 +16,17 @@ This project has undergone a massive architectural shift to support the modern A
 | **Android Gradle Plugin** | 7.0.3  | **8.3.2 - 8.11.1+** |
 | **Gradle Support** | 7.3.1 | **8.11.1+** |
 | **Kotlin Support** | 1.5.32 | **1.9.25+** |
-| **Java Requirement** | 8 | **17 (Modern)** |
-| **Encryption Engine** | XOR stream cipher | **AES-256-CTR (Military Grade)** |
+| **Java Requirement** | 8 | **17** |
+| **Encryption Engine** | XOR stream cipher | **AES-256-CTR** |
 | **Key Scattering** | DEX-visible seed | **8-Part Split Distribution** |
-| **Build Stability** | Crash-prone on AARs | **AAR Intelligence (Universal Fix)** |
-| **API Architecture** | Deprecated Transform | **ScopedArtifacts (Future Proof)** |
+| **API Architecture** | Deprecated Transform | **ScopedArtifacts** |
 
 ---
 
-## 🏗️ Key Contributions by Jitendra Kumar (JungliBro)
+## 🏗️ Key Contributions by Jitendra Kumar
 
 - **Modernized Core**: A complete rewrite of the transformation engine to work with the latest Android build tools.
-- **Dependency Scalability**: Introduced automated classpath analysis, solving the long-standing "ClassMirror" lookup failures for external libraries like Zip4j.
+- **Dependency Scalability**: Introduced automated classpath analysis, solving the long-standing "ClassMirror" lookup failures for external libraries.
 - **AAR Intelligence**: Developed a smart extraction system to handle local and remote `.aar` dependencies without build-time crashes.
 - **Production Performance**: Optimized for zero runtime lag, making it safe for high-traffic production apps.
 
