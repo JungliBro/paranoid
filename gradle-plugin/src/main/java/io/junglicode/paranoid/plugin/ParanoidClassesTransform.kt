@@ -52,29 +52,6 @@ abstract class ParanoidClassesTransform :
     val enabled: Property<Boolean>
   }
 
-  // Shared AES key reconstructed from the parameter list — computed once per transform invocation
-  private val aesKey: ByteArray by lazy {
-    parameters.get().aesKeyBytes.get().map { it.toByte() }.toByteArray()
-  }
-
-  // Shared registry for all classes in this build — uses the same AES key
-  private val stringRegistry: StringRegistry by lazy {
-    StringRegistryImpl(aesKey)
-  }
-
-  private val deobfuscator: Deobfuscator by lazy {
-    val projectName = parameters.get().projectName.get()
-    val internalName = "io/junglicode/paranoid/Deobfuscator$$projectName"
-    val type = getObjectTypeByInternalName(internalName)
-    // Updated signature: (J [[B [[I) Ljava/lang/String;
-    val method = Method(
-      "getString",
-      Type.getType(String::class.java),
-      arrayOf(Type.LONG_TYPE, Type.getType("[[B"), Type.getType("[[I"))
-    )
-    Deobfuscator(type, method)
-  }
-
   override fun createClassVisitor(
     classContext: ClassContext,
     nextClassVisitor: ClassVisitor
@@ -82,6 +59,18 @@ abstract class ParanoidClassesTransform :
     if (!parameters.get().enabled.get()) {
       return nextClassVisitor
     }
+
+    val aesKey = parameters.get().aesKeyBytes.get().map { it.toByte() }.toByteArray()
+    val stringRegistry = StringRegistryImpl(aesKey)
+    val projectName = parameters.get().projectName.get()
+    val internalName = "io/junglicode/paranoid/Deobfuscator$$projectName"
+    val type = getObjectTypeByInternalName(internalName)
+    val method = Method(
+      "getString",
+      Type.getType(String::class.java),
+      arrayOf(Type.LONG_TYPE, Type.getType("[[B"), Type.getType("[[I"))
+    )
+    val deobfuscator = Deobfuscator(type, method)
 
     return StringLiteralsClassPatcher(
       deobfuscator = deobfuscator,
