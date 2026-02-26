@@ -21,7 +21,7 @@ Zero code changes needed — just annotate with `@Obfuscate` and build.
 | Encryption | XOR stream cipher (reversible) | **AES-256-CTR** (cryptographically secure) |
 | Key storage | Seed visible in DEX | **Key split into 8 scattered inner classes** |
 | Key per build | Same (predictable) | **Fresh `SecureRandom` key every build** |
-| Gradle Transform | Deprecated `Transform` API | **`AsmClassVisitorFactory` (AGP 8+ API)** |
+| Gradle Transform | Deprecated `Transform` API | **`ScopedArtifacts` (AGP 8.3+ API)** |
 
 ---
 
@@ -49,7 +49,7 @@ buildscript {
     maven { url 'https://jitpack.io' }
   }
   dependencies {
-    classpath 'com.github.JungliBro.paranoid:paranoid-gradle-plugin:1.0.7'
+    classpath 'com.github.JungliBro.paranoid:paranoid-gradle-plugin:1.1.0'
   }
 }
 ```
@@ -151,7 +151,7 @@ paranoid {
 **Maintained and enhanced by:** [Jitendra Kumar](https://github.com/JungliBro)
 
 Enhancements:
-- AGP 8+ migration (Transform API → AsmClassVisitorFactory)
+- AGP 8+ migration (Transform API → ScopedArtifacts)
 - AES-256-CTR encryption replacing XOR stream cipher
 - Per-build random key generation with scattered fragment obfuscation
 - Gradle 8.7, Kotlin 1.9.25, Java 17, SDK 34
