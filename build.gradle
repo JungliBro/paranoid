@@ -1,6 +1,6 @@
 allprojects {
   group = 'io.junglicode'
-  version = '1.1.2'
+  version = '1.1.3'
 
   ext.javaVersion = JavaVersion.VERSION_17
   ext.kotlinVersion = '1.9.25'
