@@ -45,10 +45,10 @@ abstract class ParanoidArtifactTransform : TransformAction<ParanoidArtifactTrans
     val bootClasspath: ListProperty<String>
 
     @get:Input
-    val isEnabled: Property<Boolean>
+    val enabled: Property<Boolean>
 
     @get:Input
-    val isCacheable: Property<Boolean>
+    val cacheable: Property<Boolean>
   }
 
   @get:InputArtifact
@@ -59,7 +59,7 @@ abstract class ParanoidArtifactTransform : TransformAction<ParanoidArtifactTrans
     val input = inputArtifact.get().asFile
     val params = parameters
 
-    if (!params.isEnabled.get()) {
+    if (!params.enabled.get()) {
       // If paranoid is disabled, pass through unchanged
       if (input.isDirectory) {
         input.copyRecursively(outputs.dir("passthrough"), overwrite = true)
@@ -104,7 +104,7 @@ abstract class ParanoidArtifactTransform : TransformAction<ParanoidArtifactTrans
     val seed = params.obfuscationSeed.orNull
     return when {
       seed != null -> seed
-      !params.isCacheable.get() -> SecureRandom().nextInt()
+      !params.cacheable.get() -> SecureRandom().nextInt()
       else -> ObfuscationSeedCalculator.calculate(listOf(input))
     }
   }

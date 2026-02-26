@@ -49,7 +49,7 @@ abstract class ParanoidClassesTransform :
     val projectName: Property<String>
 
     @get:Input
-    val isEnabled: Property<Boolean>
+    val enabled: Property<Boolean>
   }
 
   // Shared AES key reconstructed from the parameter list — computed once per transform invocation
@@ -79,7 +79,7 @@ abstract class ParanoidClassesTransform :
     classContext: ClassContext,
     nextClassVisitor: ClassVisitor
   ): ClassVisitor {
-    if (!parameters.get().isEnabled.get()) {
+    if (!parameters.get().enabled.get()) {
       return nextClassVisitor
     }
 
@@ -92,7 +92,7 @@ abstract class ParanoidClassesTransform :
   }
 
   override fun isInstrumentable(classData: ClassData): Boolean {
-    return parameters.get().isEnabled.get() &&
+    return parameters.get().enabled.get() &&
       !classData.className.startsWith("io.junglicode.paranoid.Deobfuscator")
   }
 }

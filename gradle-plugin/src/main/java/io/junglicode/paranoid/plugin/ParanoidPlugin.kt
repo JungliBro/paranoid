@@ -67,7 +67,7 @@ class ParanoidPlugin : Plugin<Project> {
         // Pass AES key as List<Int> (Gradle parameters must be serializable)
         params.aesKeyBytes.set(aesKey.map { it.toInt() and 0xFF })
         params.projectName.set(projectName)
-        params.isEnabled.set(extension.isEnabled)
+        params.enabled.set(extension.isEnabled)
       }
 
       variant.instrumentation.setAsmFramesComputationMode(
