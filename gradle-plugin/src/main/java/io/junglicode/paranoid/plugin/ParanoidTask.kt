@@ -26,6 +26,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.objectweb.asm.Opcodes
@@ -55,6 +56,9 @@ abstract class ParanoidTask : DefaultTask() {
 
   @get:CompileClasspath
   abstract val bootClasspath: ListProperty<File>
+
+  @get:CompileClasspath
+  abstract val classpath: ConfigurableFileCollection
 
   @TaskAction
   fun transform() {
@@ -92,7 +96,7 @@ abstract class ParanoidTask : DefaultTask() {
       inputs = inputs,
       outputs = outputs,
       genPath = tempDir, // Generated classes go to tempDir
-      classpath = emptyList(),
+      classpath = classpath.files.toList(),
       bootClasspath = bootClasspath.get(),
       projectName = projectName,
       asmApi = Opcodes.ASM9,

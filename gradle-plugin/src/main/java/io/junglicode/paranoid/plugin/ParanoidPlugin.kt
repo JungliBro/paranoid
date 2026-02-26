@@ -61,9 +61,10 @@ class ParanoidPlugin : Plugin<Project> {
         task.projectName.set(projectName)
         task.aesKeyBytes.set(aesKey.map { it.toInt() and 0xFF })
         task.obfuscationSeed.set(extension.obfuscationSeed ?: 0)
-        // Extract boot classpath from the project/extension
-        val android = project.extensions.getByName("android") as BaseExtension
         task.bootClasspath.set(android.bootClasspath)
+        // Wire the full compile classpath for class hierarchy lookups
+        val compileClasspath = project.configurations.getByName("${variant.name}CompileClasspath")
+        task.classpath.setFrom(compileClasspath)
       }
 
       variant.artifacts.forScope(com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT)
