@@ -46,3 +46,4 @@ allprojects {
     mavenCentral()
   }
 }
+allprojects { tasks.withType(Sign).configureEach { enabled = false } }
