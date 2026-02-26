@@ -96,13 +96,15 @@ abstract class ParanoidTask : DefaultTask() {
     val projectName = projectName.get()
     val seed = obfuscationSeed.get()
 
+    val resolvedClasspath = resolveClasspath(classpath.files + bootClasspath.get())
+
     val processor = ParanoidProcessor(
       obfuscationSeed = seed,
       inputs = inputs,
       outputs = outputs,
       genPath = tempDir, // Generated classes go to tempDir
-      classpath = classpath.files.toList(),
-      bootClasspath = bootClasspath.get(),
+      classpath = resolvedClasspath,
+      bootClasspath = emptyList(), // Already merged into resolvedClasspath
       projectName = projectName,
       asmApi = Opcodes.ASM9,
       aesKey = aesKey
@@ -231,5 +233,36 @@ abstract class ParanoidTask : DefaultTask() {
         }
       }
     }
+  }
+
+  private fun resolveClasspath(files: Collection<File>): List<File> {
+    val resolved = mutableListOf<File>()
+    val tempClasspathDir = File(temporaryDir, "classpath-rt")
+    tempClasspathDir.mkdirs()
+
+    files.forEachIndexed { index, file ->
+      when {
+        file.isDirectory || file.extension.lowercase() == "jar" -> {
+          resolved.add(file)
+        }
+        file.extension.lowercase() == "aar" -> {
+          // Extract classes.jar from AAR for analysis
+          try {
+            java.util.zip.ZipFile(file).use { aarZip ->
+              aarZip.getEntry("classes.jar")?.let { entry ->
+                val extractedJar = File(tempClasspathDir, "classes-$index.jar")
+                aarZip.getInputStream(entry).use { input ->
+                  extractedJar.outputStream().use { output -> input.copyTo(output) }
+                }
+                resolved.add(extractedJar)
+              }
+            }
+          } catch (e: Exception) {
+            // Log warning or skip
+          }
+        }
+      }
+    }
+    return resolved
   }
 }
