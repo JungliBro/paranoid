@@ -74,5 +74,6 @@ idea {
 pablo {
   shadow {
     relocate 'io.junglicode.paranoid'
+    relocate 'com.joom.grip', 'io.junglicode.paranoid.grip'
   }
 }
