@@ -1,0 +1,78 @@
+apply plugin: 'kotlin'
+apply plugin: 'idea'
+apply from: "$rootDir/pablo.gradle"
+
+kotlin {
+  jvmToolchain(17)
+}
+
+targetCompatibility = javaVersion
+sourceCompatibility = javaVersion
+
+dependencies {
+  compileOnly gradleApi()
+  compileOnly "com.android.tools.build:gradle:$androidToolsVersion"
+  compileOnly "com.android.tools.build:gradle-api:$androidToolsVersion"
+
+  relocate project(':processor')
+
+  // Needed at compile-time for ParanoidClassesTransform (shaded in processor fat-jar at runtime)
+  compileOnly "com.joom.grip:grip:$gripVersion"
+  compileOnly "org.ow2.asm:asm-commons:$asmVersion"
+  compileOnly "org.ow2.asm:asm:$asmVersion"
+
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+}
+
+final File generatedDir = new File(projectDir, "generated")
+final File generatedJavaSourcesDir = new File(generatedDir, "main/java")
+
+task generateBuildClass {
+  inputs.property('version', version)
+  outputs.dir generatedDir
+
+  doLast {
+    final File buildClassFile = new File(generatedJavaSourcesDir, "io/michaelrocks/paranoid/plugin/Build.java")
+    buildClassFile.parentFile.mkdirs()
+    buildClassFile.text = "" +
+        "package io.michaelrocks.paranoid.plugin;\n" +
+        "\n" +
+        "public class Build {\n" +
+        "    public static final String VERSION = \"$version\";\n" +
+        "}\n"
+  }
+}
+
+sourceSets {
+  main {
+    java.srcDirs += generatedJavaSourcesDir
+  }
+}
+
+tasks.withType(AbstractCompile).configureEach {
+  dependsOn tasks.generateBuildClass
+}
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+  dependsOn tasks.generateBuildClass
+}
+
+clean.doFirst {
+  delete generatedDir
+}
+
+// Gradle 8 strict task ordering: sourcesJar uses generated sources, must declare dependency explicitly
+tasks.withType(Jar).configureEach {
+  dependsOn tasks.generateBuildClass
+}
+
+idea {
+  module {
+    generatedSourceDirs += generatedJavaSourcesDir
+  }
+}
+
+pablo {
+  shadow {
+    relocate 'io.michaelrocks.paranoid'
+  }
+}

@@ -1,0 +1,48 @@
+allprojects {
+  group = 'io.michaelrocks'
+  version = '0.3.7'
+
+  ext.javaVersion = JavaVersion.VERSION_17
+  ext.kotlinVersion = '1.9.25'
+  ext.pabloVersion = '1.3.1'
+
+  ext.asmVersion = '9.6'
+  ext.gripVersion = '0.8.1'
+  ext.logbackVersion = '1.2.13'
+
+  ext.junitVersion = '4.13.2'
+
+  ext.androidToolsVersion = '8.3.2'
+  ext.androidxAppcompatVersion = '1.7.0'
+  ext.androidxAnnotationVersion = '1.8.2'
+
+  ext.androidxRulesVersion = '1.6.1'
+  ext.androidxRunnerVersion = '1.6.2'
+  ext.androidxTestExtJunitVersion = '1.2.1'
+  ext.androidxEspressoVersion = '3.6.1'
+
+  ext.androidBuildToolsVersion = '34.0.0'
+  ext.androidCompileSdkVersion = 34
+  ext.androidMinSdkVersion = 21
+  ext.androidTargetSdkVersion = ext.androidCompileSdkVersion
+
+  buildscript {
+    repositories {
+      google()
+      mavenLocal()
+      mavenCentral()
+    }
+
+    dependencies {
+      classpath "com.android.tools.build:gradle:$androidToolsVersion"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+      classpath "io.michaelrocks.pablo:pablo:$pabloVersion"
+    }
+  }
+
+  repositories {
+    google()
+    mavenLocal()
+    mavenCentral()
+  }
+}

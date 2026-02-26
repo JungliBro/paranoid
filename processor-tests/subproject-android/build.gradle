@@ -1,0 +1,22 @@
+apply plugin: 'com.android.library'
+
+android {
+  compileSdk androidCompileSdkVersion
+  namespace 'io.michaelrocks.paranoid.processor.subprojectandroid'
+
+  defaultConfig {
+    minSdk androidMinSdkVersion
+    targetSdk androidTargetSdkVersion
+    versionCode 1
+    versionName version
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation "io.michaelrocks:paranoid-core:$version"
+}
