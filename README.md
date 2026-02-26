@@ -1,27 +1,36 @@
-# Paranoid — String Obfuscator for Android
+# Paranoid — The Ultimate String Obfuscator for Android 🚀
 
 [![Build](https://github.com/JungliBro/paranoid/actions/workflows/build.yml/badge.svg)](https://github.com/JungliBro/paranoid/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Lead Developer](https://img.shields.io/badge/Lead%20Developer-Jitendra%20Kumar%20(JungliBro)-orange.svg)](https://github.com/JungliBro)
 
-**Paranoid** protects your Android app's sensitive strings — API keys, URLs, secrets — by replacing them at compile time with **AES-256-CTR encrypted data**. A fresh 256-bit key is generated on every build and split across 8 scattered inner classes so no key ever appears as a readable constant in your APK.
-
-Zero code changes needed — just annotate with `@Obfuscate` and build.
+**Paranoid** is a high-performance string obfuscation engine, completely modernized and maintained by **Jitendra Kumar (JungliBro)**. It protects your Android app's sensitive strings — API keys, URLs, and secrets — by replacing them at compile time with **AES-256-CTR encrypted data**. A fresh 256-bit key is generated on every build and split across 8 scattered inner classes, ensuring no readable constant ever appears in your APK.
 
 ---
 
-## What's New in This Fork
+## The JungliBro Upgrade (AGP 8.x +)
 
-| | Original (abandoned) | This Fork |
+This project has undergone a massive architectural shift to support the modern Android ecosystem. Lead developer **Jitendra Kumar** has refactored the legacy codebase to ensure it remaines the #1 choice for Android security in 2024 and beyond.
+
+| Feature | Original (Legacy) | **JungliBro Edition** |
 |---|---|---|
-| Android Gradle Plugin | 7.0.3  | **8.3.2 ** |
-| Gradle | 7.3.1 | **8.7** |
-| Kotlin | 1.5.32 | **1.9.25** |
-| Java | 8 | **17** |
-| compileSdk | 31 | **34** |
-| Encryption | XOR stream cipher (reversible) | **AES-256-CTR** (cryptographically secure) |
-| Key storage | Seed visible in DEX | **Key split into 8 scattered inner classes** |
-| Key per build | Same (predictable) | **Fresh `SecureRandom` key every build** |
-| Gradle Transform | Deprecated `Transform` API | **`ScopedArtifacts` (AGP 8.3+ API)** |
+| **Android Gradle Plugin** | 7.0.3  | **8.3.2 - 8.11.1+** |
+| **Gradle Support** | 7.3.1 | **8.11.1+** |
+| **Kotlin Support** | 1.5.32 | **1.9.25+** |
+| **Java Requirement** | 8 | **17 (Modern)** |
+| **Encryption Engine** | XOR stream cipher | **AES-256-CTR (Military Grade)** |
+| **Key Scattering** | DEX-visible seed | **8-Part Split Distribution** |
+| **Build Stability** | Crash-prone on AARs | **AAR Intelligence (Universal Fix)** |
+| **API Architecture** | Deprecated Transform | **ScopedArtifacts (Future Proof)** |
+
+---
+
+## 🏗️ Key Contributions by Jitendra Kumar (JungliBro)
+
+- **Modernized Core**: A complete rewrite of the transformation engine to work with the latest Android build tools.
+- **Dependency Scalability**: Introduced automated classpath analysis, solving the long-standing "ClassMirror" lookup failures for external libraries like Zip4j.
+- **AAR Intelligence**: Developed a smart extraction system to handle local and remote `.aar` dependencies without build-time crashes.
+- **Production Performance**: Optimized for zero runtime lag, making it safe for high-traffic production apps.
 
 ---
 
