@@ -125,33 +125,20 @@ class DeobfuscatorGenerator(
   // ──────────────────────────────────────────────────────────────────────────
 
   private fun ClassVisitor.generateStaticInitializer() {
-    newMethod(Opcodes.ACC_STATIC, METHOD_STATIC_INITIALIZER) {
-      val chunkCount = stringRegistry.getChunkCount()
-      val deobType = deobfuscator.type.toAsmType()
+    val chunkCount = stringRegistry.getChunkCount()
+    val deobType = deobfuscator.type.toAsmType()
 
+    newMethod(Opcodes.ACC_STATIC, METHOD_STATIC_INITIALIZER) {
       // data = new byte[chunkCount][]
       push(chunkCount)
       newArray(BYTE_ARRAY_TYPE)
       putStatic(deobType, DATA_FIELD_NAME, DATA_FIELD_TYPE)
 
-      // Fill each chunk
+      // Fill each chunk via separate methods to avoid "Method too large"
       for (i in 0 until chunkCount) {
-        val chunkBytes = stringRegistry.getChunkBytes(i)
         getStatic(deobType, DATA_FIELD_NAME, DATA_FIELD_TYPE)
-        dup()
-        push(i)
-        push(chunkBytes.size)
-        newArray(Type.BYTE_TYPE)
-        // fill byte array inline
-        chunkBytes.forEachIndexed { byteIdx, byte ->
-          dup()
-          push(byteIdx)
-          push(byte.toInt())
-          arrayStore(Type.BYTE_TYPE)
-        }
-        arrayStore(BYTE_ARRAY_TYPE)
+        invokeStatic(deobType, Method("fill$i", "([[B)V"))
       }
-      pop()
 
       // keyParts = new int[KEY_FRAGMENT_COUNT][]
       push(KEY_FRAGMENT_COUNT)
@@ -168,6 +155,24 @@ class DeobfuscatorGenerator(
         arrayStore(INT_ARRAY_TYPE)
       }
       pop()
+    }
+
+    // Generate the fill methods
+    for (i in 0 until chunkCount) {
+      val chunkBytes = stringRegistry.getChunkBytes(i)
+      newMethod(ACC_PRIVATE or ACC_STATIC, Method("fill$i", "([[B)V")) {
+        loadArg(0) // the byte[][] data
+        push(i)
+        push(chunkBytes.size)
+        newArray(Type.BYTE_TYPE)
+        chunkBytes.forEachIndexed { byteIdx, byte ->
+          dup()
+          push(byteIdx)
+          push(byte.toInt())
+          arrayStore(Type.BYTE_TYPE)
+        }
+        arrayStore(BYTE_ARRAY_TYPE)
+      }
     }
   }
 

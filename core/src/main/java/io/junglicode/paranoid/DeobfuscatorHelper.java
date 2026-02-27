@@ -32,7 +32,7 @@ public class DeobfuscatorHelper {
 
   // Maximum length of each encrypted data chunk (stored as byte[]).
   // Same chunking concept as before, but now byte-based (not char-based).
-  public static final int MAX_CHUNK_LENGTH = 0x1fff;
+  public static final int MAX_CHUNK_LENGTH = 0x400;
 
   private DeobfuscatorHelper() {
     // Cannot be instantiated.
