@@ -41,7 +41,7 @@ class ParanoidPlugin : Plugin<Project> {
     }
 
     // Register paranoid-core runtime dependency
-    project.addCoreDependency(getDefaultConfiguration())
+   project.addCoreDependency(getDefaultConfiguration())
 
     // Project-wide AES key for deterministic/cacheable builds
     val aesKey = generateAesKey()
@@ -63,8 +63,7 @@ class ParanoidPlugin : Plugin<Project> {
         task.obfuscationSeed.set(extension.obfuscationSeed ?: 0)
         task.bootClasspath.set(android.bootClasspath)
         // Wire the full compile classpath for class hierarchy lookups
-        val compileClasspath = project.configurations.getByName("${variant.name}CompileClasspath")
-        task.classpath.setFrom(compileClasspath)
+        task.classpath.setFrom(variant.compileClasspath)
       }
 
       variant.artifacts.forScope(com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT)
