@@ -1,13 +1,12 @@
 allprojects {
   group = 'io.junglicode'
-  version = '1.1.5'
+  version = '1.1.6'
 
   ext.javaVersion = JavaVersion.VERSION_17
   ext.kotlinVersion = '1.9.25'
   ext.pabloVersion = '1.3.1'
-
-  ext.asmVersion = '9.6'
-  ext.gripVersion = '0.8.1'
+  ext.asmVersion = '9.5'
+  ext.gripVersion = '0.9.1'
   ext.logbackVersion = '1.2.13'
 
   ext.junitVersion = '4.13.2'

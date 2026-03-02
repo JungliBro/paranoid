@@ -47,7 +47,7 @@ class ParanoidProcessor(
 
   private val logger = getLogger()
 
-  private val grip: Grip = GripFactory.newInstance(asmApi).create(inputs + classpath + bootClasspath)
+  private val grip: Grip = GripFactory.newInstance(asmApi).create((inputs + classpath + bootClasspath).map { it.toPath() })
 
   /** AES-256 key for this build (32 bytes). Generated once and reused throughout. */
   private val buildAesKey: ByteArray = aesKey ?: generateAesKey()
@@ -68,14 +68,14 @@ class ParanoidProcessor(
     logger.info("Prepare to generate {}", deobfuscator)
 
     val sourcesAndSinks = inputs.zip(outputs) { input, output ->
-      IoFactory.createFileSource(input) to IoFactory.createFileSink(input, output)
+      IoFactory.createFileSource(input.toPath()) to IoFactory.createFileSink(input.toPath(), output.toPath())
     }
 
     try {
       Patcher(deobfuscator, stringRegistry, analysisResult, grip.classRegistry, asmApi)
         .copyAndPatchClasses(sourcesAndSinks)
 
-      DirectoryFileSink(genPath).use { sink ->
+      DirectoryFileSink(genPath.toPath()).use { sink ->
         val generator = DeobfuscatorGenerator(deobfuscator, stringRegistry, grip.classRegistry, buildAesKey)
 
         // 1. Write the main Deobfuscator class
