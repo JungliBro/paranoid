@@ -130,7 +130,7 @@ abstract class ParanoidTask : DefaultTask() {
       // 2. Merge processed directories (and generated classes)
       outputs.filter { it.isDirectory }.forEach { dir ->
         dir.walkTopDown().filter { it.isFile }.forEach { file ->
-           val relativePath = file.relativeTo(dir).path
+           val relativePath = file.relativeTo(dir).path.replace('\\', '/')
            // Avoid duplicates if it was already merged from a processed jar (unlikely here)
            try {
              jarStream.putNextEntry(ZipEntry(relativePath))
@@ -209,7 +209,7 @@ abstract class ParanoidTask : DefaultTask() {
 
       // 4. Merge generated classes from genPath (tempDir)
       tempDir.walkTopDown().filter { it.isFile && it.name.endsWith("Deobfuscator.class") }.forEach { file ->
-         val relativePath = file.relativeTo(tempDir).path
+         val relativePath = file.relativeTo(tempDir).path.replace('\\', '/')
          try {
            jarStream.putNextEntry(ZipEntry(relativePath))
            file.inputStream().copyTo(jarStream)
@@ -221,7 +221,7 @@ abstract class ParanoidTask : DefaultTask() {
       
       // Also look for key fragment classes (K0..K7)
       tempDir.walkTopDown().filter { it.isFile && it.name.contains("$") && it.name.endsWith(".class") }.forEach { file ->
-        val relativePath = file.relativeTo(tempDir).path
+        val relativePath = file.relativeTo(tempDir).path.replace('\\', '/')
         if (relativePath.contains("Deobfuscator$")) {
           try {
             jarStream.putNextEntry(ZipEntry(relativePath))
