@@ -7,7 +7,7 @@ pablo {
     name = 'Paranoid'
     description = 'A string obfuscator for Android applications with AES-256-CTR encryption. AGP 8+ compatible fork.'
     inceptionYear = '2016'
-    url = 'https://github.com/JungliBro/paranoid'
+    url = 'https://github.com/JungliCode/paranoid'
 
     licenses {
       license {
@@ -18,15 +18,15 @@ pablo {
     }
     developers {
       developer {
-        id = 'JungliBro'
+        id = 'JungliCode'
         name = 'Jitendra Kumar'
         email = 'junglicode@gmail.com'
       }
     }
     scm {
-      connection = 'scm:git:git://github.com/JungliBro/paranoid.git'
-      developerConnection = 'scm:git:ssh://git@github.com/JungliBro/paranoid.git'
-      url = 'https://github.com/JungliBro/paranoid'
+      connection = 'scm:git:git://github.com/JungliCode/paranoid.git'
+      developerConnection = 'scm:git:ssh://git@github.com/JungliCode/paranoid.git'
+      url = 'https://github.com/JungliCode/paranoid'
     }
   }
 }

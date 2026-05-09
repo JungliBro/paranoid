@@ -99,6 +99,6 @@ class ParanoidPlugin : Plugin<Project> {
 
   private fun Project.addCoreDependency(configurationName: String) {
     val version = Build.VERSION
-    dependencies.add(configurationName, "com.github.JungliBro.paranoid:paranoid-core:$version")
+    dependencies.add(configurationName, "com.github.JungliCode.paranoid:paranoid-core:$version")
   }
 }

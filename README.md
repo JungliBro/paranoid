@@ -1,6 +1,6 @@
 # Paranoid — String Obfuscator for Android 🚀
 
-[![Build](https://github.com/JungliBro/paranoid/actions/workflows/build.yml/badge.svg)](https://github.com/JungliBro/paranoid/actions/workflows/build.yml)
+[![Build](https://github.com/JungliCode/paranoid/actions/workflows/build.yml/badge.svg)](https://github.com/JungliCode/paranoid/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 **Paranoid** is a high-performance string obfuscation engine. It protects your Android app's sensitive strings — API keys, URLs, and secrets — by replacing them at compile time with **AES-256-CTR encrypted data**. A fresh 256-bit key is generated on every build and split across 8 scattered inner classes, ensuring no readable constant ever appears in your APK.
@@ -57,7 +57,7 @@ buildscript {
     maven { url 'https://jitpack.io' }
   }
   dependencies {
-    classpath 'com.github.JungliBro.paranoid:paranoid-gradle-plugin:1.1.7'
+    classpath 'com.github.JungliCode.paranoid:paranoid-gradle-plugin:1.1.7'
   }
 }
 ```
@@ -156,7 +156,7 @@ paranoid {
 
 ## Credits
 
-**Maintained and enhanced by:** [Jitendra Kumar](https://github.com/JungliBro)
+**Maintained and enhanced by:** [Jitendra Kumar](https://github.com/JungliCode)
 
 Enhancements:
 - Multi-layered Architecture Hardening against NP/MT Manager (Inlined AES decryption, package-relative naming, `<clinit>` plaintext leakage patched)
