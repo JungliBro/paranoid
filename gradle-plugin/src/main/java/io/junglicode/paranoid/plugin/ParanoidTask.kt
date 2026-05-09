@@ -105,11 +105,14 @@ abstract class ParanoidTask : DefaultTask() {
 
     val resolvedClasspath = resolveClasspath(classpath.files + bootClasspath.get())
 
+    val genDir = File(tempDir, "generated")
+    genDir.mkdirs()
+
     val processor = ParanoidProcessor(
       obfuscationSeed = seed,
       inputs = inputs,
       outputs = outputs,
-      genPath = tempDir, // Generated classes go to tempDir
+      genPath = genDir, // Generated classes go to genDir
       classpath = resolvedClasspath,
       bootClasspath = emptyList(), // Already merged into resolvedClasspath
       projectName = projectName,
@@ -120,10 +123,13 @@ abstract class ParanoidTask : DefaultTask() {
 
     processor.process()
 
+    // Add genDir to outputs so it gets merged into the JAR alongside the processed inputs
+    val allOutputs = outputs + genDir
+
     // Now merge all outputs (jars and dirs) into the final outputJar
     JarOutputStream(outputJar.outputStream()).use { jarStream ->
       // 1. Merge processed jars
-      outputs.filter { it.extension == "jar" }.forEach { jarFile ->
+      allOutputs.filter { it.extension == "jar" }.forEach { jarFile ->
         java.util.zip.ZipFile(jarFile).use { zip ->
            zip.entries().asSequence().forEach { entry ->
              if (!entry.isDirectory) {
@@ -136,7 +142,7 @@ abstract class ParanoidTask : DefaultTask() {
       }
 
       // 2. Merge processed directories (and generated classes)
-      outputs.filter { it.isDirectory }.forEach { dir ->
+      allOutputs.filter { it.isDirectory }.forEach { dir ->
         dir.walkTopDown().filter { it.isFile }.forEach { file ->
            val relativePath = file.relativeTo(dir).path.replace('\\', '/')
            // Avoid duplicates if it was already merged from a processed jar (unlikely here)
@@ -215,26 +221,6 @@ abstract class ParanoidTask : DefaultTask() {
         }
       }
 
-      // 4. Merge ALL generated .class files from genPath (tempDir).
-      // Class names are no longer fixed — they're embedded under the app's own package.
-      // We collect only files that were newly generated (not from processed inputs/outputs).
-      val processedPaths = outputs.flatMap { outFile ->
-        if (outFile.isDirectory) outFile.walkTopDown().filter { it.isFile }.map { it.relativeTo(outFile).path.replace('\\', '/') }.toList()
-        else emptyList()
-      }.toHashSet()
-
-      tempDir.walkTopDown().filter { it.isFile && it.extension == "class" }.forEach { file ->
-        val relativePath = file.relativeTo(tempDir).path.replace('\\', '/')
-        if (relativePath !in processedPaths) {
-          try {
-            jarStream.putNextEntry(ZipEntry(relativePath))
-            file.inputStream().copyTo(jarStream)
-            jarStream.closeEntry()
-          } catch (e: java.util.zip.ZipException) {
-            // Entry already exists (processed dir already merged it), skip
-          }
-        }
-      }
     }
   }
 
