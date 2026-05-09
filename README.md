@@ -57,7 +57,7 @@ buildscript {
     maven { url 'https://jitpack.io' }
   }
   dependencies {
-    classpath 'com.github.JungliCode.paranoid:paranoid-gradle-plugin:1.1.8'
+    classpath 'com.github.JungliCode.paranoid:paranoid-gradle-plugin:1.1.9'
   }
 }
 ```
