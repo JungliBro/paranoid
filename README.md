@@ -18,13 +18,14 @@ This project has undergone a massive architectural shift to support the modern A
 | **Kotlin Support** | 1.5.32 | **1.9.25+** |
 | **Java Requirement** | 8 | **17** |
 | **Encryption Engine** | XOR stream cipher | **AES-256-CTR** |
-| **Key Scattering** | DEX-visible seed | **8-Part Split Distribution** |
+| **Key Scattering** | DEX-visible seed | **Embedded Static Arrays** |
 | **API Architecture** | Deprecated Transform | **ScopedArtifacts** |
 
 ---
 
 ## 🏗️ Key Contributions by Jitendra Kumar
 
+- **Architecture Hardening**: Defeats automated string decryption tools (e.g. NP Manager) by inlining decryption logic and generating package-relative `Deobfuscator` classes to eliminate static hook targets.
 - **Modernized Core**: A complete rewrite of the transformation engine to work with the latest Android build tools.
 - **Dependency Scalability**: Introduced automated classpath analysis, solving the long-standing "ClassMirror" lookup failures for external libraries.
 - **AAR Intelligence**: Developed a smart extraction system to handle local and remote `.aar` dependencies without build-time crashes.
@@ -56,7 +57,7 @@ buildscript {
     maven { url 'https://jitpack.io' }
   }
   dependencies {
-    classpath 'com.github.JungliBro.paranoid:paranoid-gradle-plugin:1.1.6'
+    classpath 'com.github.JungliBro.paranoid:paranoid-gradle-plugin:1.1.7'
   }
 }
 ```
@@ -158,9 +159,10 @@ paranoid {
 **Maintained and enhanced by:** [Jitendra Kumar](https://github.com/JungliBro)
 
 Enhancements:
+- Multi-layered Architecture Hardening against NP/MT Manager (Inlined AES decryption, package-relative naming, `<clinit>` plaintext leakage patched)
 - AGP 8+ migration (Transform API → ScopedArtifacts)
 - AES-256-CTR encryption replacing XOR stream cipher
-- Per-build random key generation with scattered fragment obfuscation
+- Per-build embedded random key generation
 - Gradle 8.7, Kotlin 1.9.25, Java 17, SDK 34
 
 **Original project:** [michaelrocks/paranoid](https://github.com/michaelrocks/paranoid) by Michael Rozumyanskiy  
