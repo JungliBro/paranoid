@@ -94,7 +94,7 @@ class Patcher(
       writer
         .wrapIf(hasObfuscateAnnotation) { RemoveObfuscateClassPatcher(asmApi, it) }
         .wrapIf(configuration != null) { StringLiteralsClassPatcher(deobfuscator, stringRegistry, asmApi, it) }
-        .wrapIf(configuration != null && shouldObfuscateLiterals) { StringConstantsClassPatcher(configuration!!, asmApi, it) }
+        .wrapIf(configuration != null && shouldObfuscateLiterals) { StringConstantsClassPatcher(configuration!!, deobfuscator, stringRegistry, asmApi, it) }
     reader.accept(patcher, ClassReader.SKIP_FRAMES)
     sink.createFile(name, writer.toByteArray())
     return true

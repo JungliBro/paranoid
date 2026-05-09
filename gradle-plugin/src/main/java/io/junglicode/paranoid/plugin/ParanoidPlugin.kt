@@ -59,6 +59,7 @@ class ParanoidPlugin : Plugin<Project> {
         ParanoidTask::class.java
       ) { task ->
         task.projectName.set(projectName)
+        task.appPackage.set(variant.namespace)
         task.aesKeyBytes.set(aesKey.map { it.toInt() and 0xFF })
         task.obfuscationSeed.set(extension.obfuscationSeed ?: 0)
         task.bootClasspath.set(android.bootClasspath)

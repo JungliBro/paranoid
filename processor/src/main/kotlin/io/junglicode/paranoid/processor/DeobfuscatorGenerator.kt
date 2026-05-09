@@ -64,9 +64,15 @@ class DeobfuscatorGenerator(
     )
 
     writer.generateDataField()
-    writer.generateKeyPartsField()
+    writer.generateKeyField()
     writer.generateStaticInitializer()
     writer.generateDefaultConstructor()
+
+    // Generate the inline helper methods for decryption (from AsmHelper)
+    AsmHelper.generate_extractBytes(writer, deobfuscator.type.internalName)
+    AsmHelper.generate_makeIv(writer, deobfuscator.type.internalName)
+    
+    // Generate the getString method that uses the inline helpers
     writer.generateGetStringMethod()
 
     writer.visitEnd()
@@ -115,13 +121,12 @@ class DeobfuscatorGenerator(
     visitField(ACC_PRIVATE or ACC_STATIC or ACC_FINAL, DATA_FIELD_NAME, DATA_FIELD_TYPE.descriptor, null, null).visitEnd()
   }
 
-  private fun ClassVisitor.generateKeyPartsField() {
-    visitField(ACC_PRIVATE or ACC_STATIC or ACC_FINAL, KEY_PARTS_FIELD_NAME, KEY_PARTS_FIELD_TYPE.descriptor, null, null).visitEnd()
+  private fun ClassVisitor.generateKeyField() {
+    visitField(ACC_PRIVATE or ACC_STATIC or ACC_FINAL, KEY_FIELD_NAME, KEY_FIELD_TYPE.descriptor, null, null).visitEnd()
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // Static initializer — fills data[][] with encrypted bytes and
-  //                       keyParts[][] from K0..K(n-1) inner classes
+  // Static initializer — fills data[][] with encrypted bytes
   // ──────────────────────────────────────────────────────────────────────────
 
   private fun ClassVisitor.generateStaticInitializer() {
@@ -140,21 +145,16 @@ class DeobfuscatorGenerator(
         invokeStatic(deobType, Method("fill$i", "([[B)V"))
       }
 
-      // keyParts = new int[KEY_FRAGMENT_COUNT][]
-      push(KEY_FRAGMENT_COUNT)
-      newArray(INT_ARRAY_TYPE)
-      putStatic(deobType, KEY_PARTS_FIELD_NAME, KEY_PARTS_FIELD_TYPE)
-
-      // Fill keyParts[i] = Ki.V
-      for (i in 0 until KEY_FRAGMENT_COUNT) {
-        val fragClassName = "${deobfuscator.type.internalName}\$K$i"
-        getStatic(deobType, KEY_PARTS_FIELD_NAME, KEY_PARTS_FIELD_TYPE)
+      // Fill key field directly in clinit
+      push(32)
+      newArray(Type.BYTE_TYPE)
+      aesKey.forEachIndexed { index, byte ->
         dup()
-        push(i)
-        getStatic(Type.getObjectType(fragClassName), "V", INT_ARRAY_FIELD_TYPE)
-        arrayStore(INT_ARRAY_TYPE)
+        push(index)
+        push(byte.toInt())
+        arrayStore(Type.BYTE_TYPE)
       }
-      pop()
+      putStatic(deobType, KEY_FIELD_NAME, KEY_FIELD_TYPE)
     }
 
     // Generate the fill methods
@@ -176,6 +176,91 @@ class DeobfuscatorGenerator(
     }
   }
 
+  private fun ClassVisitor.generateGetStringMethod() {
+    newMethod(ACC_PUBLIC or ACC_STATIC, deobfuscator.deobfuscationMethod) {
+      val start = newLabel()
+      val end = newLabel()
+      val catchBlock = newLabel()
+      visitTryCatchBlock(start, end, catchBlock, "java/lang/Exception")
+      mark(start)
+      
+      // offset = (int) (id >>> 32)
+      loadArg(0)
+      push(32)
+      math(Opcodes.LUSHR, Type.LONG_TYPE)
+      cast(Type.LONG_TYPE, Type.INT_TYPE)
+      val offsetLocal = newLocal(Type.INT_TYPE)
+      storeLocal(offsetLocal)
+      
+      // length = (int) (id & 0xFFFFFFFFL)
+      loadArg(0)
+      push(4294967295L)
+      math(Opcodes.LAND, Type.LONG_TYPE)
+      cast(Type.LONG_TYPE, Type.INT_TYPE)
+      val lengthLocal = newLocal(Type.INT_TYPE)
+      storeLocal(lengthLocal)
+      
+      // encrypted = extractBytes(data, offset, length)
+      getStatic(deobfuscator.type.toAsmType(), DATA_FIELD_NAME, DATA_FIELD_TYPE)
+      loadLocal(offsetLocal)
+      loadLocal(lengthLocal)
+      invokeStatic(deobfuscator.type.toAsmType(), Method("extractBytes", "([[BII)[B"))
+      val encryptedLocal = newLocal(Type.getType("[B"))
+      storeLocal(encryptedLocal)
+      
+      // iv = makeIv(offset)
+      loadLocal(offsetLocal)
+      invokeStatic(deobfuscator.type.toAsmType(), Method("makeIv", "(I)[B"))
+      val ivLocal = newLocal(Type.getType("[B"))
+      storeLocal(ivLocal)
+      
+      // cipher = Cipher.getInstance("AES/CTR/NoPadding")
+      push("AES/CTR/NoPadding")
+      invokeStatic(Type.getType(javax.crypto.Cipher::class.java), Method("getInstance", "(Ljava/lang/String;)Ljavax/crypto/Cipher;"))
+      val cipherLocal = newLocal(Type.getType(javax.crypto.Cipher::class.java))
+      storeLocal(cipherLocal)
+      
+      // cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv))
+      loadLocal(cipherLocal)
+      push(javax.crypto.Cipher.DECRYPT_MODE)
+      
+      newInstance(Type.getType(javax.crypto.spec.SecretKeySpec::class.java))
+      dup()
+      getStatic(deobfuscator.type.toAsmType(), KEY_FIELD_NAME, KEY_FIELD_TYPE)
+      push("AES")
+      invokeConstructor(Type.getType(javax.crypto.spec.SecretKeySpec::class.java), Method("<init>", "([BLjava/lang/String;)V"))
+      
+      newInstance(Type.getType(javax.crypto.spec.IvParameterSpec::class.java))
+      dup()
+      loadLocal(ivLocal)
+      invokeConstructor(Type.getType(javax.crypto.spec.IvParameterSpec::class.java), Method("<init>", "([B)V"))
+      
+      invokeVirtual(Type.getType(javax.crypto.Cipher::class.java), Method("init", "(ILjava/security/Key;Ljava/security/spec/AlgorithmParameterSpec;)V"))
+      
+      // plainBytes = cipher.doFinal(encrypted)
+      loadLocal(cipherLocal)
+      loadLocal(encryptedLocal)
+      invokeVirtual(Type.getType(javax.crypto.Cipher::class.java), Method("doFinal", "([B)[B"))
+      val plainBytesLocal = newLocal(Type.getType("[B"))
+      storeLocal(plainBytesLocal)
+      
+      // return new String(plainBytes, "UTF-8")
+      newInstance(Type.getType(String::class.java))
+      dup()
+      loadLocal(plainBytesLocal)
+      push("UTF-8")
+      invokeConstructor(Type.getType(String::class.java), Method("<init>", "([BLjava/lang/String;)V"))
+      returnValue()
+      
+      mark(end)
+      
+      mark(catchBlock)
+      // return ""
+      push("")
+      returnValue()
+    }
+  }
+
   private fun ClassVisitor.generateDefaultConstructor() {
     newMethod(ACC_PUBLIC, METHOD_DEFAULT_CONSTRUCTOR) {
       loadThis()
@@ -183,70 +268,16 @@ class DeobfuscatorGenerator(
     }
   }
 
-  private fun ClassVisitor.generateGetStringMethod() {
-    newMethod(ACC_PUBLIC or ACC_STATIC, deobfuscator.deobfuscationMethod) {
-      loadArg(0)  // long id
-      getStatic(deobfuscator.type.toAsmType(), DATA_FIELD_NAME, DATA_FIELD_TYPE)
-      getStatic(deobfuscator.type.toAsmType(), KEY_PARTS_FIELD_NAME, KEY_PARTS_FIELD_TYPE)
-      invokeStatic(DEOBFUSCATOR_HELPER_TYPE.toAsmType(), METHOD_GET_STRING)
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Key splitting helpers
-  // ──────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Splits the 32-byte AES key into KEY_FRAGMENT_COUNT int[] arrays.
-   * Returns list of IntArrays (one per fragment).
-   */
-  fun splitKeyIntoFragments(): List<IntArray> {
-    require(aesKey.size == 32) { "AES key must be 32 bytes" }
-    // 32 bytes / 4 bytes per int = 8 ints total, split into KEY_FRAGMENT_COUNT fragments
-    val totalInts = 8  // 32 bytes
-    val intsPerFragment = totalInts / KEY_FRAGMENT_COUNT  // e.g. 1 int per fragment if 8 fragments
-    val remainder = totalInts % KEY_FRAGMENT_COUNT
-
-    val fragments = mutableListOf<IntArray>()
-    var bytePos = 0
-    for (i in 0 until KEY_FRAGMENT_COUNT) {
-      val fragmentInts = intsPerFragment + if (i < remainder) 1 else 0
-      val words = IntArray(fragmentInts)
-      for (j in 0 until fragmentInts) {
-        words[j] = ((aesKey[bytePos].toInt() and 0xFF) shl 24) or
-                   ((aesKey[bytePos + 1].toInt() and 0xFF) shl 16) or
-                   ((aesKey[bytePos + 2].toInt() and 0xFF) shl 8) or
-                    (aesKey[bytePos + 3].toInt() and 0xFF)
-        bytePos += 4
-      }
-      fragments.add(words)
-    }
-    return fragments
-  }
-
   companion object {
-    // Number of key fragment inner classes (K0 .. K7)
-    const val KEY_FRAGMENT_COUNT = 8
-
     private val METHOD_STATIC_INITIALIZER = Method("<clinit>", "()V")
     private val METHOD_DEFAULT_CONSTRUCTOR = Method("<init>", "()V")
-
-    // Updated signature: (J [[B [[I) Ljava/lang/String;
-    private val METHOD_GET_STRING = Method(
-      "getString",
-      Type.getType(String::class.java),
-      arrayOf(Type.LONG_TYPE, Type.getType("[[B"), Type.getType("[[I"))
-    )
 
     private val OBJECT_TYPE = Type.getObjectType("java/lang/Object")
 
     private const val DATA_FIELD_NAME = "data"
     private val DATA_FIELD_TYPE = Type.getType("[[B")       // byte[][]
     private val BYTE_ARRAY_TYPE = Type.getType("[B")        // byte[]   (array element type)
-
-    private const val KEY_PARTS_FIELD_NAME = "keyParts"
-    private val KEY_PARTS_FIELD_TYPE = Type.getType("[[I")  // int[][]
-    private val INT_ARRAY_TYPE = Type.getType("[I")         // int[]    (array element type)
-    private val INT_ARRAY_FIELD_TYPE = Type.getType("[I")   // int[]    (field descriptor)
+    private const val KEY_FIELD_NAME = "key"
+    private val KEY_FIELD_TYPE = Type.getType("[B")         // byte[]
   }
 }

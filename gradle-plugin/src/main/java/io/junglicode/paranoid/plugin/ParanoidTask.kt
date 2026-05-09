@@ -51,6 +51,12 @@ abstract class ParanoidTask : DefaultTask() {
   @get:Input
   abstract val projectName: Property<String>
 
+  /** The app's applicationId (e.g. "com.example.myapp"). Used to embed the
+   *  generated Deobfuscator under the app's own package so NP Manager cannot
+   *  find it by searching for a fixed library package prefix. */
+  @get:Input
+  abstract val appPackage: Property<String>
+
   @get:Input
   abstract val obfuscationSeed: Property<Int>
 
@@ -94,6 +100,7 @@ abstract class ParanoidTask : DefaultTask() {
 
     val aesKey = aesKeyBytes.get().map { it.toByte() }.toByteArray()
     val projectName = projectName.get()
+    val appPackage = appPackage.get()
     val seed = obfuscationSeed.get()
 
     val resolvedClasspath = resolveClasspath(classpath.files + bootClasspath.get())
@@ -106,6 +113,7 @@ abstract class ParanoidTask : DefaultTask() {
       classpath = resolvedClasspath,
       bootClasspath = emptyList(), // Already merged into resolvedClasspath
       projectName = projectName,
+      appPackage = appPackage,
       asmApi = Opcodes.ASM9,
       aesKey = aesKey
     )
@@ -207,28 +215,23 @@ abstract class ParanoidTask : DefaultTask() {
         }
       }
 
-      // 4. Merge generated classes from genPath (tempDir)
-      tempDir.walkTopDown().filter { it.isFile && it.name.endsWith("Deobfuscator.class") }.forEach { file ->
-         val relativePath = file.relativeTo(tempDir).path.replace('\\', '/')
-         try {
-           jarStream.putNextEntry(ZipEntry(relativePath))
-           file.inputStream().copyTo(jarStream)
-           jarStream.closeEntry()
-         } catch (e: java.util.zip.ZipException) {
-           // Entry already exists, skip
-         }
-      }
-      
-      // Also look for key fragment classes (K0..K7)
-      tempDir.walkTopDown().filter { it.isFile && it.name.contains("$") && it.name.endsWith(".class") }.forEach { file ->
+      // 4. Merge ALL generated .class files from genPath (tempDir).
+      // Class names are no longer fixed — they're embedded under the app's own package.
+      // We collect only files that were newly generated (not from processed inputs/outputs).
+      val processedPaths = outputs.flatMap { outFile ->
+        if (outFile.isDirectory) outFile.walkTopDown().filter { it.isFile }.map { it.relativeTo(outFile).path.replace('\\', '/') }.toList()
+        else emptyList()
+      }.toHashSet()
+
+      tempDir.walkTopDown().filter { it.isFile && it.extension == "class" }.forEach { file ->
         val relativePath = file.relativeTo(tempDir).path.replace('\\', '/')
-        if (relativePath.contains("Deobfuscator$")) {
+        if (relativePath !in processedPaths) {
           try {
             jarStream.putNextEntry(ZipEntry(relativePath))
             file.inputStream().copyTo(jarStream)
             jarStream.closeEntry()
           } catch (e: java.util.zip.ZipException) {
-            // Entry already exists, skip
+            // Entry already exists (processed dir already merged it), skip
           }
         }
       }

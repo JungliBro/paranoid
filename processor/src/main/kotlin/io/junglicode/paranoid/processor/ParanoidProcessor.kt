@@ -39,6 +39,11 @@ class ParanoidProcessor(
   private val classpath: Collection<File>,
   private val bootClasspath: Collection<File>,
   private val projectName: String,
+  // The app's applicationId (e.g. "com.example.myapp").
+  // When provided, the Deobfuscator class is placed inside the app's own package
+  // so it is indistinguishable from the app's own code and cannot be found by
+  // NP Manager's fixed library-prefix search.
+  private val appPackage: String = "",
   private val asmApi: Int = Opcodes.ASM9,
   // Optional: caller may provide a pre-generated AES key (for deterministic builds).
   // If null, a fresh SecureRandom key is generated each run.
@@ -81,14 +86,6 @@ class ParanoidProcessor(
         // 1. Write the main Deobfuscator class
         val deobfuscatorBytes = generator.generateDeobfuscator()
         sink.createFile("${deobfuscator.type.internalName}.class", deobfuscatorBytes)
-
-        // 2. Write scattered AES key fragment classes (K0..K7)
-        val fragments = generator.splitKeyIntoFragments()
-        fragments.forEachIndexed { index, words ->
-          val fragBytes = generator.generateKeyFragmentClass(index, words)
-          val fragName = "${deobfuscator.type.internalName}\$K$index.class"
-          sink.createFile(fragName, fragBytes)
-        }
       }
     } finally {
       sourcesAndSinks.forEach { (source, sink) ->
@@ -131,9 +128,29 @@ class ParanoidProcessor(
   }
 
   private fun createDeobfuscator(): Deobfuscator {
-    val deobfuscatorInternalName = "io/junglicode/paranoid/Deobfuscator${composeDeobfuscatorNameSuffix()}"
+    // Build the internal name of the generated Deobfuscator class.
+    //
+    // Strategy: embed it inside the *app's own package* so it looks like just
+    // another app class. NP Manager searches for fixed library prefixes like
+    // "io/junglicode/paranoid/" — placing the class under the app's package
+    // breaks that search entirely, and every developer gets a unique path.
+    //
+    // Name scheme: {app_package_path}/paranoid/{shortHex}
+    //   shortHex  = first 4 bytes of AES key as hex  (unique per build, not a secret)
+    //
+    // Example: com/example/myapp/paranoid/Dfa3b9c1
+    val deobfuscatorInternalName: String = if (appPackage.isNotBlank()) {
+      val pkgPath = appPackage.replace('.', '/')
+      // Use first 4 bytes of the per-build AES key to make the name unique per build.
+      val keyHex = buildAesKey.take(4).joinToString("") { "%02x".format(it.toInt() and 0xFF) }
+      "$pkgPath/paranoid/D$keyHex"
+    } else {
+      // Fallback for non-Android projects or missing applicationId
+      "io/junglicode/paranoid/Deobfuscator${composeDeobfuscatorNameSuffix()}"
+    }
+
     val deobfuscatorType = getObjectTypeByInternalName(deobfuscatorInternalName)
-    // The generated proxy method takes only the ID; it fetches data/keyParts from static fields
+    // The proxy method signature only takes the id; data and keyParts are static fields.
     val deobfuscationMethod = Method(
       "getString",
       Type.getType(String::class.java),

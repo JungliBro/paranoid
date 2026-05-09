@@ -27,9 +27,12 @@ import org.objectweb.asm.Opcodes.ACC_STATIC
 import org.objectweb.asm.Type
 import org.objectweb.asm.commons.GeneratorAdapter
 import org.objectweb.asm.commons.Method
+import io.junglicode.paranoid.processor.model.Deobfuscator
 
 class StringConstantsClassPatcher(
   private val configuration: ClassConfiguration,
+  private val deobfuscator: Deobfuscator,
+  private val stringRegistry: StringRegistry,
   asmApi: Int,
   delegate: ClassVisitor,
 ) : ClassVisitor(asmApi, delegate) {
@@ -96,7 +99,9 @@ class StringConstantsClassPatcher(
           logger.info("  Patching <clinit>...")
           super.visitCode()
           for ((field, value) in configuration.constantStringsByFieldName) {
-            push(value)
+            val stringId = stringRegistry.registerString(value)
+            push(stringId)
+            invokeStatic(deobfuscator.type.toAsmType(), deobfuscator.deobfuscationMethod)
             putStatic(configuration.container.toAsmType(), field, STRING_TYPE)
           }
         }
