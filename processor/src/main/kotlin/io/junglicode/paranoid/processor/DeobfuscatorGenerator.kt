@@ -29,6 +29,7 @@ import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_STATIC
 import org.objectweb.asm.Opcodes.ACC_SUPER
 import org.objectweb.asm.Type
+import org.objectweb.asm.commons.GeneratorAdapter
 import org.objectweb.asm.commons.Method
 
 /**
@@ -187,7 +188,7 @@ class DeobfuscatorGenerator(
       // offset = (int) (id >>> 32)
       loadArg(0)
       push(32)
-      ushr(Type.LONG_TYPE)
+      math(GeneratorAdapter.USHR, Type.LONG_TYPE)
       cast(Type.LONG_TYPE, Type.INT_TYPE)
       val offsetLocal = newLocal(Type.INT_TYPE)
       storeLocal(offsetLocal)
@@ -195,7 +196,7 @@ class DeobfuscatorGenerator(
       // length = (int) (id & 0xFFFFFFFFL)
       loadArg(0)
       push(4294967295L)
-      and(Type.LONG_TYPE)
+      math(GeneratorAdapter.AND, Type.LONG_TYPE)
       cast(Type.LONG_TYPE, Type.INT_TYPE)
       val lengthLocal = newLocal(Type.INT_TYPE)
       storeLocal(lengthLocal)
